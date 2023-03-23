@@ -41,11 +41,11 @@ type ChatRequest struct {
 }
 
 type ChatResponse struct {
-	Task_id         int32  `json:"task_id`
+	Task_id         int32  `json:"task_id"`
 	Tonversation_id string `json:"conversation_id"`
 	Chat_id         string `json:"chat_id"`
 	Content         string `json:"content"`
 	Action          string `json:"action"`
 	MsgType         string `json:"type"`
-	Residual        int32  `json:"residual""`
+	Residual        int32  `json:"residual"`
 }
