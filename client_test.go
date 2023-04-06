@@ -38,6 +38,7 @@ func TestClient(t *testing.T) {
 	asks := []string{"讲个故事", "讲个笑话", "五粮液", "茅台"}
 	client := aimagician.NewClient(Cookies)
 	stream := client.ChatStream(asks[0])
+	defer stream.Close()
 	for {
 		response, err := stream.Recv()
 		if err != nil {
