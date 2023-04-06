@@ -35,14 +35,18 @@ type ConverstaionResponse struct {
 }
 
 type ChatRequest struct {
+	AI_Persona_Id  int32  `json:"ai_persona_id"`
 	TaskId         int32  `json:"task_id"`
 	ConversationId string `json:"conversation_id"`
 	Content        string `json:"content"`
 }
 
+// {\"task_id\": 1376, \"conversation_id\": \"a189136be17d42ab9676b602be7c3032\",
+// \"chat_id\": \"7c95866e029a4707bcc53281b4788dfc\", \"content\": \"\\u8bf7\\u6c42\\u7981\\u6b62\",
+// \"action\": \"error\", \"type\": \"sys\", \"residual\": 0}
 type ChatResponse struct {
 	Task_id         int32  `json:"task_id"`
-	Tonversation_id string `json:"conversation_id"`
+	Conversation_id string `json:"conversation_id"`
 	Chat_id         string `json:"chat_id"`
 	Content         string `json:"content"`
 	Action          string `json:"action"`

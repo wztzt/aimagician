@@ -2,6 +2,7 @@ package aimagician
 
 import (
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
@@ -16,6 +17,32 @@ type Client struct {
 	Cookies        []http.Cookie
 	ConversationId string
 	TaskId         int32
+}
+
+type ChatStreamResponse struct {
+	Conn *websocket.Conn
+}
+
+func (c *ChatStreamResponse) Recv() (*ChatResponse, error) {
+	buf := make([]byte, 1024)
+	len, err := c.Conn.Read(buf)
+	if err != nil {
+		return nil, err
+	}
+
+	resMsg := ChatResponse{}
+	err = json.Unmarshal(buf[:len], &resMsg)
+	if err != nil {
+		return nil, err
+	}
+	if resMsg.Action == "end" {
+		return nil, io.EOF
+	}
+	return &resMsg, nil
+}
+
+func (c *ChatStreamResponse) Close() {
+	c.Conn.Close()
 }
 
 const (
@@ -84,6 +111,37 @@ func (c *Client) newConversationId() string {
 	return conversation.ConversationId
 }
 
+func (c *Client) ChatStream(content string) *ChatStreamResponse {
+	if c.TaskId == 0 {
+		c.TaskId = c.randomTaskId()
+	}
+	if c.ConversationId == "" {
+		c.ConversationId = c.newConversationId()
+	}
+
+	conn, err := websocket.Dial(ws_url, "", ws_url)
+	if err != nil {
+		return nil
+	}
+	msg := ChatRequest{
+		AI_Persona_Id:  25,
+		ConversationId: c.ConversationId,
+		TaskId:         c.TaskId,
+		Content:        content,
+	}
+	data, err := json.Marshal(&msg)
+	if err != nil {
+		return nil
+	}
+	_, err = conn.Write(data)
+	if err != nil {
+		return nil
+	}
+	return &ChatStreamResponse{
+		Conn: conn,
+	}
+}
+
 func (c *Client) Chat(content string) string {
 	if c.TaskId == 0 {
 		c.TaskId = c.randomTaskId()
@@ -98,6 +156,7 @@ func (c *Client) Chat(content string) string {
 		return ""
 	}
 	msg := ChatRequest{
+		AI_Persona_Id:  25,
 		ConversationId: c.ConversationId,
 		TaskId:         c.TaskId,
 		Content:        content,
@@ -118,14 +177,19 @@ func (c *Client) Chat(content string) string {
 		if err != nil {
 			break
 		}
+
 		resMsg := ChatResponse{}
 		err = json.Unmarshal(buf[:len], &resMsg)
 		if err != nil {
 			break
 		}
+		if resMsg.Action != "normal" {
+			continue
+		}
 		if resMsg.Residual == 0 && !need {
 			need = true
 		}
+
 		res += resMsg.Content
 		if resMsg.Action == "end" {
 			break
