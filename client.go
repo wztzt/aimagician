@@ -183,15 +183,13 @@ func (c *Client) Chat(content string) string {
 		if err != nil {
 			break
 		}
-		if resMsg.Action != "normal" {
-			continue
-		}
+
 		if resMsg.Residual == 0 && !need {
 			need = true
 		}
 
 		res += resMsg.Content
-		if resMsg.Action == "end" {
+		if resMsg.Action == "end" || resMsg.Action == "error" {
 			break
 		}
 	}
