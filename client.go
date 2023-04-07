@@ -35,7 +35,7 @@ func (c *ChatStreamResponse) Recv() (*ChatResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	if resMsg.Action == "end" {
+	if resMsg.Action == "end" || resMsg.Action == "error" {
 		return nil, io.EOF
 	}
 	return &resMsg, nil
