@@ -24,21 +24,27 @@ type ChatStreamResponse struct {
 }
 
 func (c *ChatStreamResponse) Recv() (*ChatResponse, error) {
-	buf := make([]byte, 1024)
-	len, err := c.Conn.Read(buf)
-	if err != nil {
-		return nil, err
+	for {
+		buf := make([]byte, 1024)
+		len, err := c.Conn.Read(buf)
+		if err != nil {
+			return nil, err
+		}
+
+		resMsg := ChatResponse{}
+		err = json.Unmarshal(buf[:len], &resMsg)
+		if err != nil {
+			return nil, err
+		}
+		if resMsg.Action == "info" {
+			continue
+		}
+		if resMsg.Action == "end" || resMsg.Action == "error" {
+			return nil, io.EOF
+		}
+		return &resMsg, nil
 	}
 
-	resMsg := ChatResponse{}
-	err = json.Unmarshal(buf[:len], &resMsg)
-	if err != nil {
-		return nil, err
-	}
-	if resMsg.Action == "end" || resMsg.Action == "error" {
-		return nil, io.EOF
-	}
-	return &resMsg, nil
 }
 
 func (c *ChatStreamResponse) Close() {
@@ -188,7 +194,10 @@ func (c *Client) Chat(content string) string {
 			need = true
 		}
 
-		res += resMsg.Content
+		if resMsg.Action == "normal" {
+			res += resMsg.Content
+		}
+
 		if resMsg.Action == "end" || resMsg.Action == "error" {
 			break
 		}
